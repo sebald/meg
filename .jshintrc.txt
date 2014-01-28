@@ -1,0 +1,39 @@
+{
+	"node": true,
+	"browser": true,
+	"curly":true,
+	"eqeqeq":true,
+	"immed":true,
+	"latedef":true,
+	"newcap":false,
+	"noarg":true,
+	"sub":true,
+	"boss":true,
+	"eqnull":true,
+	"smarttabs":true,
+	"undef": true,
+	"unused": true,
+	"globals":{
+		"angular": true,
+		"$": true,
+		"jQuery": true,
+		"moment": true,
+		"Pikaday": true,
+
+		"module": true,
+
+		"jasmine": true,
+		"inject": true,
+		"beforeEach": true,
+		"afterEach": true,
+		"describe": true,
+		"ddescribe": true,
+		"it": true,
+		"iit": true,
+		"expect": true,
+		"spyOn": true,
+		"spyOnEvent": true,
+
+		"protractor": true
+	}
+}
