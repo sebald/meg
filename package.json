@@ -1,0 +1,28 @@
+{
+  "name": "mep",
+  "version": "0.0.1",
+  "description": "Parsing Expression Grammer for Markdown.",
+  "main": "src/mep.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sebald/mep.git"
+  },
+  "keywords": [
+    "parse",
+    "markdown",
+    "html",
+    "javascript"
+  ],
+  "author": "Sebastian Sebald (sebastian.sebald@gmail.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sebald/mep/issues"
+  },
+  "homepage": "https://github.com/sebald/mep"
+}
