@@ -45,12 +45,12 @@ var ParserFactory = (function () {
 					if ( self.parseChar.test(self.curChar) ) {
 						current = writeToResult();
 					} else {
-						fails( self.curChar, current );
+						fails( self.parseChar, current );
 						current = failed;
 					}
 				}
 			} else {
-				fails( self.curChar, current );
+				fails( self.parseChar, current );
 			}
 			return result;
 		}
