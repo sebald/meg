@@ -1,4 +1,4 @@
-ddescribe('[mutation.js]', function () {
+describe('[mutation.js]', function () {
 	var factory;
 
 	// MutationFactory
