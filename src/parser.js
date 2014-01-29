@@ -15,7 +15,7 @@ var ParserFactory = (function () {
 
 		function fails ( expected, found ) {
 			// No fail, just reached end of input (eoi).
-			if( self.eoi === self.curPos ) {
+			if( self.input.length === self.curPos ) {
 				return;
 			}
 
@@ -23,14 +23,12 @@ var ParserFactory = (function () {
 		}
 
 		/**
-		 *	Rule:
-		 *	Char <- /^[^<]/
+		 *	RULE: Char <- /^[^<]/
 		 */
 		this.parseChar = /^[^<]/;
 
 		/**
-		 *	Rule:
-		 *	TextNode <- Char*
+		 *	RULE: TextNode <- Char*
 		 */
 		this.parseTextNode = function () {
 			var result = '',
@@ -52,15 +50,13 @@ var ParserFactory = (function () {
 					}
 				}
 			} else {
-				// TODO: Handle Error.
-				return failed;
+				fails( self.curChar, current );
 			}
 			return result;
 		}
 
 		/**
-		 *	Rule:
-		 *	Content <- Element / TextNode
+		 *	RULE: Content <- Element / TextNode
 		 */
 		this.parseContent = function () {
 			return self.parseTextNode();
@@ -69,10 +65,12 @@ var ParserFactory = (function () {
 
 
 	Parser.prototype.fromHTML = function ( html ) {
+		var markdown;
+
 		this.curPos = 0;
 		this.input = html;
-		this.eoi = this.input.length;
 		this.curChar = this.input.charAt(this.curPos);
+
 		return this.parseContent();
 	}
 

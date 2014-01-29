@@ -39,9 +39,15 @@ describe('[parser.js]', function () {
 		// Parse HTML to Markdown
 		// -------------------------
 		describe('Parse HTML to Markdown', function () {
-			it('should parse a single string to a paragraph', function () {
+			// Text Nodes
+			it('should be able to parse a textNode', function () {
 				expect(parser.fromHTML( 'This is a paragraph!' )).toEqual('This is a paragraph!');
 				expect(parser.fromHTML( 'This is another text!' )).toEqual('This is another text!');
+			});
+
+			it('should throw an error when textNode doesn\'t match the spec.', function () {
+				expect(function () { parser.fromHTML('You should escape angle brackets like <') }).toThrow();
+				expect(function () { parser.fromHTML('< that is a bad start') }).toThrow();
 			});
 
 			// it('should parse simple <div>s to paragraphs', function () {
