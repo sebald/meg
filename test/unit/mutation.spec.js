@@ -88,5 +88,17 @@ describe('[mutation.js]', function () {
 			expect(mutation.mutate('foo', 'I am not so strong!')).toBe( null );
 			expect(mutation.mutate('', 'I am not so strong!')).toBe( null );
 		});
+
+		it('should use the "start" options to wrap the content when no "close" is specified', function () {
+			options = {
+				exp: /em|i/,
+				start: '*'
+			};
+			mutation = factory.createMutation( options );
+
+			expect(mutation.mutate('em', 'I am strong!')).toBe('*I am strong!*');
+			expect(mutation.mutate('i', 'I am strong!')).toBe('*I am strong!*');
+
+		});
 	});
 });

@@ -9,12 +9,9 @@ var MutationFactory = (function () {
 		if ( !/string|undefined/.test(typeof options.start) ) {
 			throw new Error ('MUTATION: "start" has to be a String.');
 		}
-		if ( !/string|undefined/.test(typeof options.close) ) {
-			throw new Error ('MUTATION: "close" has to be a String.');
-		}
 		this.exp = options.exp;
 		this.start = options.start;
-		this.close = options.close;
+		this.close = options.close || options.start;
 	}
 
 	Mutation.prototype.mutate = function ( tagName, content ) {
