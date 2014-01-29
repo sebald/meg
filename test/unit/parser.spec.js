@@ -8,11 +8,16 @@ describe('[parser.js]', function () {
 			factory = new ParserFactory();
 		});
 
-		it('should expose itself', function () {
+		it('should be defined', function () {
+			expect(ParserFactory).toBeDefined();
+			expect(typeof ParserFactory).toEqual( 'function' );
+		});
+
+		it('should be possible to create a factory instance', function () {
 			expect(factory).toBeDefined();
 		});
 
-		it('should have function to create a parser', function () {
+		it('should have a function to create a new parser', function () {
 			expect(typeof factory.createParser).toEqual( 'function' );
 		});
 	});
