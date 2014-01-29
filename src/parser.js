@@ -41,7 +41,7 @@ var ParserFactory = (function () {
 			} else {
 				current = failed;
 			}
-			if( current !== failed )
+			if( current !== failed ) {
 				while ( current !== failed ) {
 					result += current;
 					if ( self.parseChar.test(self.curChar) ) {
