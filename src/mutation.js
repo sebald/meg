@@ -6,15 +6,19 @@ var MutationFactory = (function () {
 		if ( !options.exp || !(options.exp instanceof RegExp) ) {
 			throw new Error ('MUTATION: "exp" has to be a RegExp.');
 		}
-		if ( !options.action || typeof options.action !== 'function' ) {
-			throw new Error ('MUTATION: "action" has to be a Function.');
+		if ( !/string|undefined/.test(typeof options.start) ) {
+			throw new Error ('MUTATION: "start" has to be a String.');
+		}
+		if ( !/string|undefined/.test(typeof options.close) ) {
+			throw new Error ('MUTATION: "close" has to be a String.');
 		}
 		this.exp = options.exp;
-		this.action = options.action;
+		this.start = options.start;
+		this.close = options.close;
 	}
 
-	Mutation.prototype.mutate = function ( s ) {
-		return this.exp.test(s) ? this.action(s) : null;
+	Mutation.prototype.mutate = function ( tagName, content ) {
+		return this.exp.test(tagName) ? this.start + content + this.close : null;
 	};
 
 	// Factory

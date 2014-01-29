@@ -28,7 +28,8 @@ describe('[mutation.js]', function () {
 	describe('Mutation', function () {
 		var options = {
 				exp: /.*/,
-				action: function () {}
+				start: '',
+				close: ''
 			},
 			mutation;
 
@@ -37,15 +38,17 @@ describe('[mutation.js]', function () {
 			expect(mutation.constructor.name).toBe( 'Mutation' );
 		});
 
-		it('should be possible to create a mutation with an expression and an action', function () {
+		it('should be possible to create a mutation with an expression and a replacement', function () {
 			var exp = /foo/,
-				fn = function () {};
+				start = 'start',
+				close = 'close';
 
-			options = { exp: exp, action: fn };
+			options = { exp: exp, start: start, close: close };
 			mutation = factory.createMutation( options );
 
 			expect(mutation.exp).toEqual( exp );
-			expect(mutation.action).toEqual( fn );
+			expect(mutation.start).toEqual( start );
+			expect(mutation.close).toEqual( close );
 		});
 
 		it('should expose a mutation fuction', function () {
@@ -55,33 +58,35 @@ describe('[mutation.js]', function () {
 
 		it('should be possible to mutate a string', function () {
 			options = {
-				exp: /[aeiou]/g,
-				action: function ( s ) {
-					return s.replace(this.exp, '*');
-				}
+				exp: /strong|b/,
+				start: '**',
+				close: '**'
 			};
 			mutation = factory.createMutation( options );
-			expect(mutation.mutate('Hello World')).toBe('H*ll* W*rld');
+
+			expect(mutation.mutate('strong', 'I am strong!')).toBe('**I am strong!**');
+			expect(mutation.mutate('b', 'I am strong!')).toBe('**I am strong!**');
 
 			options = {
-				exp: /<\/?strong>/g,
-				action: function ( s ) {
-					return s.replace(this.exp, '**');
-				}
+				exp: /div|p/,
+				start: '',
+				close: '\n'
 			};
 			mutation = factory.createMutation( options );
-			expect(mutation.mutate('<strong>I am strong!</strong>')).toBe('**I am strong!**');
+
+			expect(mutation.mutate('div', 'I am a paragraph!')).toBe('I am a paragraph!\n');
+			expect(mutation.mutate('p', 'I am a paragraph!')).toBe('I am a paragraph!\n');
 		});
 
 		it('should return "null" when there is nothing to mutate', function () {
 			options = {
-				exp: /<\/?strong>/g,
-				action: function ( s ) {
-					return s.replace(this.exp, '**');
-				}
+				exp: /strong|b/,
+				start: '**',
+				close: '**'
 			};
 			mutation = factory.createMutation( options );
-			expect(mutation.mutate('I am not so strong!')).toBe( null );
+			expect(mutation.mutate('foo', 'I am not so strong!')).toBe( null );
+			expect(mutation.mutate('', 'I am not so strong!')).toBe( null );
 		});
 	});
 });
