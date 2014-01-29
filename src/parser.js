@@ -23,9 +23,9 @@ var ParserFactory = (function () {
 		}
 
 		/**
-		 *	RULE: Char <- /^[^<]/
+		 *	RULE: Char <- /[^<]/
 		 */
-		this.parseChar = /^[^<]/;
+		this.parseChar = /[^<]/;
 
 		/**
 		 *	RULE: TextNode <- Char*
