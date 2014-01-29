@@ -19,10 +19,12 @@ module.exports = function (grunt) {
 		dir:{
 			dist: 'dist',
 			src: 'src',
-			spec: 'test'
+			spec: 'test/unit'
 		},
 		files: {
-			src: '<%= dir.src %>/**/*.js',
+			src: [
+				'<%= dir.src %>/mep.js'
+			],
 			spec: '<%= dir.spec %>/**/*.spec.js'
 		},
 		banner: [
