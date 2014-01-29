@@ -23,6 +23,8 @@ module.exports = function (grunt) {
 		},
 		files: {
 			src: [
+				'<%= dir.src %>/mutation.js',
+				'<%= dir.src %>/parser.js',
 				'<%= dir.src %>/mep.js'
 			],
 			spec: '<%= dir.spec %>/**/*.spec.js'
