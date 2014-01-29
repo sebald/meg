@@ -41,7 +41,7 @@ describe('[parser.js]', function () {
 		describe('Parse HTML to Markdown', function () {
 			it('should parse a single string to a paragraph', function () {
 				expect(parser.fromHTML( 'This is a paragraph!' )).toEqual('This is a paragraph!');
-				expect(parser.fromHTML( 'This is a another text!' )).toEqual('This is another text!');
+				expect(parser.fromHTML( 'This is another text!' )).toEqual('This is another text!');
 			});
 
 			// it('should parse simple <div>s to paragraphs', function () {
