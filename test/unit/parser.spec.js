@@ -63,6 +63,11 @@ describe('[parser.js]', function () {
 			});
 
 			// TODO: Test bad tags like "< div" and allow tags like "<div class='sdsd'>"
+
+			// Parsing Errors
+			it('should provide helpful error messages.', function () {
+				expect(function () { parser.fromHTML('< woops') }).toThrow('PARSING ERROR: Expected /[a-z]/ but found " " @ 1.');
+			});
 		});
 	});
 

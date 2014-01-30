@@ -25,9 +25,8 @@ var ParserFactory = (function () {
 		function fails ( expected, found ) {
 			if( self.curPos > self.maxFailPos ) {
 				self.maxFailPos = self.curPos;
-				self.maxFailExpected = {};
+				self.maxFailExpected = { expected: expected, found: found };
 			}
-			self.maxFailExpected = { expected: expected, found: found };
 		}
 
 		function applyMutation ( startTag, content, closingTag ) {
@@ -68,7 +67,7 @@ var ParserFactory = (function () {
 			if ( self.parseLowerCase.test(self.curChar) ) {
 				current = writeToResult();
 			} else {
-				fails( 'TagName', current );
+				fails( self.parseLowerCase, self.curChar );
 				return self.failed;
 			}
 			if ( current !== self.failed ) {
@@ -242,7 +241,7 @@ var ParserFactory = (function () {
 			return result;
 		} else {
 			throw 'PARSING ERROR: Expected ' + this.maxFailExpected.expected + ' but found "' +
-				this.maxFailExpected.found + '" @' + this.maxFailPos;
+				this.maxFailExpected.found + '" @ ' + this.maxFailPos + '.';
 		}
 	}
 
