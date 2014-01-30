@@ -10,6 +10,9 @@ var ParserFactory = (function () {
 		this.failed = null;
 		this.mutations = options.mutations;
 
+
+		// Helpers
+		// -------------------------
 		function writeToResult () {
 			var c = self.curChar;
 			self.curPos++;
@@ -33,6 +36,9 @@ var ParserFactory = (function () {
 			}
 		}
 
+
+		// Mutate HTML <> Markdown
+		// -------------------------
 		function applyMutation ( startTag, content, closingTag ) {
 			if ( startTag !== closingTag ) {
 				fails( 'startTag to match closingTag', '<' + startTag + '>...</' + closingTag + '>');
