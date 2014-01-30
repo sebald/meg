@@ -52,21 +52,31 @@ describe('[parser.js]', function () {
 			});
 
 			it('should throw an error when textNode doesn\'t match the spec.', function () {
-				expect(function () { parser.fromHTML('You should escape angle brackets like <') }).toThrow();
-				expect(function () { parser.fromHTML('< that is a bad start') }).toThrow();
+				expect(function () { parser.fromHTML('You should escape angle brackets like <'); }).toThrow();
+				expect(function () { parser.fromHTML('< that is a bad start'); }).toThrow();
 			});
 
 			// Elements
-			it('should parse simple <div> to paragraphs', function () {
+			it('should parse simple <div> tag to a paragraph', function () {
 				expect(parser.fromHTML( '<div>This text is wrapped inside a div.</div>' )).toEqual('This text is wrapped inside a div.');
 				expect(parser.fromHTML( '<div>Another random text to test the parser!</div>' )).toEqual('Another random text to test the parser!');
+			});
+
+			it('should parse simple <p> tag to a paragraph', function () {
+				expect(parser.fromHTML( '<p>This text is wrapped inside a p.</p>' )).toEqual('This text is wrapped inside a p.');
+				expect(parser.fromHTML( '<p>Using the same text because I am lazy...</p>' )).toEqual('Using the same text because I am lazy...');
 			});
 
 			// TODO: Test bad tags like "< div" and allow tags like "<div class='sdsd'>"
 
 			// Parsing Errors
+			// General Parsing Errors
+			it('should throw an error when the startTag doesn\'t match the closing tag', function () {
+				expect(function () { parser.fromHTML('<div>foobar</p>'); }).toThrow();
+			});
+
 			it('should provide helpful error messages.', function () {
-				expect(function () { parser.fromHTML('< woops') }).toThrow('PARSING ERROR: Expected /[a-z]/ but found " " @ 1.');
+				expect(function () { parser.fromHTML('< woops'); }).toThrow('PARSING ERROR: Expected /[a-z]/ but found " " @ 1.');
 			});
 		});
 	});
