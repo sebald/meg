@@ -34,7 +34,7 @@ describe('[parser.js]', function () {
 		var parser;
 
 		beforeEach( function () {
-			parser = factory.createParser();
+			parser = (new ParserFactory).createParser();
 		});
 
 		it('should have a function to parse HTML to markdown', function () {
@@ -69,14 +69,25 @@ describe('[parser.js]', function () {
 
 			// TODO: Test bad tags like "< div" and allow tags like "<div class='sdsd'>"
 
-			// Parsing Errors
 			// General Parsing Errors
+			it('should throw an error when the startTag doesn\'t match the element specification', function () {
+				expect(function () { parser.fromHTML('< div>Meh, typo</div>'); }).toThrow();
+				expect(function () { parser.fromHTML('< strong>Meh, typo</strong>'); }).toThrow();
+			});
+
 			it('should throw an error when the startTag doesn\'t match the closing tag', function () {
 				expect(function () { parser.fromHTML('<div>foobar</p>'); }).toThrow();
+				expect(function () { parser.fromHTML('<b>foobar</strong>'); }).toThrow();
+			});
+
+			it('should throw an error when no mutation matches the tag to transform', function () {
+				expect(function () { parser.fromHTML('<foo>This won\'t work</foo>'); }).toThrow();
 			});
 
 			it('should provide helpful error messages.', function () {
 				expect(function () { parser.fromHTML('< woops'); }).toThrow('PARSING ERROR: Expected /[a-z]/ but found " " @ 1.');
+				expect(function () { parser.fromHTML('<b>foobar</strong>'); }).toThrow('PARSING ERROR: Expected startTag to match closingTag but found "<b>...</strong>" @ 18.');
+				expect(function () { parser.fromHTML('<foo>This won\'t work</foo>'); }).toThrow('PARSING ERROR: Expected a known expression to mutate but found "foo" @ 26.');
 			});
 		});
 	});

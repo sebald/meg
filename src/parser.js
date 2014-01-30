@@ -23,7 +23,11 @@ var ParserFactory = (function () {
 		}
 
 		function fails ( expected, found ) {
-			if( self.curPos > self.maxFailPos ) {
+			if ( self.curPos < self.maxFailPos ) {
+				return;
+			}
+
+			if ( self.curPos > self.maxFailPos ) {
 				self.maxFailPos = self.curPos;
 				self.maxFailExpected = { expected: expected, found: found };
 			}
@@ -31,7 +35,7 @@ var ParserFactory = (function () {
 
 		function applyMutation ( startTag, content, closingTag ) {
 			if ( startTag !== closingTag ) {
-				fails( 'applyMutation', startTag + '|' + closingTag );
+				fails( 'startTag to match closingTag', '<' + startTag + '>...</' + closingTag + '>');
 				return self.failed;
 			}
 
@@ -41,7 +45,10 @@ var ParserFactory = (function () {
 				if ( mutant !== null ) {
 					return mutant;
 				}
-			};
+			}
+
+			fails( 'a known expression to mutate', startTag );
+			return self.failed;
 		}
 
 
@@ -93,6 +100,7 @@ var ParserFactory = (function () {
 		this.parseTextNode = function () {
 			var result = '',
 				current;
+
 			if ( self.parseChar.test(self.curChar) ) {
 				current = writeToResult();
 			} else {
@@ -188,16 +196,23 @@ var ParserFactory = (function () {
 		 *	RULE: Element <- StartTag Content ClosingTag
 		 */
 		this.parseElement = function () {
-			var startTag = this.parseStartTag(),
+			var startPos = self.curPos,
+				startTag = self.parseStartTag(),
 				content,
-				closingTag;
+				closingTag,
+				mutant;
 
 			if ( startTag !== self.failed ) {
 				content = self.parseContent();
 				if ( content !== self.failed ) {
 					closingTag = self.parseClosingTag();
 					if ( closingTag !== self.failed ) {
-						return applyMutation( startTag, content, closingTag );
+						mutant = applyMutation( startTag, content, closingTag );
+						if( mutant === self.failed ) {
+							resetPosTo( startPos );
+							return self.failed;
+						}
+						return mutant;
 					} else {
 						fails( 'Element', closingTag );
 						return self.failed;
