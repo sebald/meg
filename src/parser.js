@@ -1,31 +1,92 @@
 var ParserFactory = (function () {
 
-	// Constructor for a single Parser.
+	// Parser Constructor
 	// -------------------------
-	function Parser () {
-		var self = this,
-			failed = null;
+	function Parser ( options ) {
+		var self = this;
+
+		this.maxFailPos = 0;
+		this.maxFailExpected = {};
+		this.failed = null;
+		this.mutations = options.mutations;
 
 		function writeToResult () {
 			var c = self.curChar;
 			self.curPos++;
-			self.curChar = self.input.charAt(self.curPos);
+			self.curChar = self.input.charAt( self.curPos );
 			return c;
 		}
 
-		function fails ( expected, found ) {
-			// No fail, just reached end of input (eoi).
-			if( self.input.length === self.curPos ) {
-				return;
-			}
-
-			throw 'PARSE ERROR: Expected ' + expected + ' but found ' + found;
+		function resetPosTo ( pos ) {
+			self.curPos = pos;
+			self.curChar = self.input.charAt( pos );
 		}
 
+		function fails ( expected, found ) {
+			if( self.curPos > self.maxFailPos ) {
+				self.maxFailPos = self.curPos;
+				self.maxFailExpected = {};
+			}
+			self.maxFailExpected = { expected: expected, found: found };
+		}
+
+		function applyMutation ( startTag, content, closingTag ) {
+			if ( startTag !== closingTag ) {
+				fails( 'applyMutation', startTag + '|' + closingTag );
+				return self.failed;
+			}
+
+			var mutations = self.mutations.html;
+			for ( var i = 0, size = mutations.length; i < size; i++ ) {
+				var mutant = mutations[i].mutate( startTag, content );
+				if ( mutant !== null ) {
+					return mutant;
+				}
+			};
+		}
+
+
+		// Grammar
+		// -------------------------
 		/**
 		 *	RULE: Char <- /[^<]/
 		 */
 		this.parseChar = /[^<]/;
+
+		/**
+		 *	RULE: LowerCase <- /[a-z]/
+		 */
+		this.parseLowerCase = /[a-z]/;
+
+		/**
+		 *	RULE: TagName <- /[a-z]+/
+		 */
+		this.parseTagName = function () {
+			var result = '',
+				current;
+
+			if ( self.parseLowerCase.test(self.curChar) ) {
+				current = writeToResult();
+			} else {
+				fails( 'TagName', current );
+				return self.failed;
+			}
+			if ( current !== self.failed ) {
+				while ( current !== self.failed ) {
+					result += current;
+					if( self.parseLowerCase.test(self.curChar) ) {
+						current = writeToResult();
+					} else {
+						fails( self.parseLowerCase, current );
+						current = self.failed;
+					}
+				}
+			} else {
+				fails( self.parseLowerCase, current);
+				current = self.failed;
+			}
+			return result;
+		};
 
 		/**
 		 *	RULE: TextNode <- Char*
@@ -33,54 +94,179 @@ var ParserFactory = (function () {
 		this.parseTextNode = function () {
 			var result = '',
 				current;
-
 			if ( self.parseChar.test(self.curChar) ) {
 				current = writeToResult();
 			} else {
-				current = failed;
+				current = self.failed;
 			}
-			if( current !== failed ) {
-				while ( current !== failed ) {
+			if ( current !== self.failed ) {
+				while ( current !== self.failed ) {
 					result += current;
 					if ( self.parseChar.test(self.curChar) ) {
 						current = writeToResult();
 					} else {
 						fails( self.parseChar, current );
-						current = failed;
+						current = self.failed;
 					}
 				}
 			} else {
 				fails( self.parseChar, current );
+				current = self.failed;
 			}
 			return result;
-		}
+		};
+
+		/**
+		 *	RULE: StartTag <- '<' TagName '>'
+		 */
+		this.parseStartTag = function () {
+			var startPos = self.curPos,
+				current,
+				tagName;
+
+			if ( self.curChar.charCodeAt(0) === 60 ) {
+				current = writeToResult();
+			} else {
+				fails( 'StartTag', current );
+				return self.failed;
+			}
+			tagName = self.parseTagName();
+			if ( tagName !== self.failed ) {
+				if( self.curChar.charCodeAt(0) === 62 ) {
+					current = writeToResult();
+				} else {
+					fails( 'StartTag', current );
+					current = self.failed;
+				}
+			} else {
+				fails( 'StartTag', current );
+				current = self.failed;
+			}
+
+			// Reset position.
+			if( current === self.failed ) {
+				resetPosTo( startPos );
+				return self.failed;
+			}
+
+			return tagName;
+		};
+
+		/**
+		 *	RULE: ClosingTag <- '</' TagName '>'
+		 */
+		this.parseClosingTag = function () {
+			var current,
+				tagName;
+
+			if ( self.curChar.charCodeAt(0) === 60 ) {
+				current = writeToResult();
+			} else {
+				return self.failed;
+			}
+			if( self.curChar.charCodeAt(0) === 47 ) {
+				current = writeToResult();
+			} else {
+				return self.failed;
+			}
+			tagName = self.parseTagName();
+			if ( tagName !== self.failed ) {
+				if( self.curChar.charCodeAt(0) === 62 ) {
+					current = writeToResult();
+				} else {
+					fails( 'ClosingTag', current );
+					return self.failed;
+				}
+			} else {
+				fails( 'ClosingTag', current );
+				return self.failed;
+			}
+
+			return tagName;
+		};
+
+		/**
+		 *	RULE: Element <- StartTag Content ClosingTag
+		 */
+		this.parseElement = function () {
+			var startTag = this.parseStartTag(),
+				content,
+				closingTag;
+
+			if ( startTag !== self.failed ) {
+				content = self.parseContent();
+				if ( content !== self.failed ) {
+					closingTag = self.parseClosingTag();
+					if ( closingTag !== self.failed ) {
+						return applyMutation( startTag, content, closingTag );
+					} else {
+						fails( 'Element', closingTag );
+						return self.failed;
+					}
+				} else {
+					fails( 'Element', content );
+					return self.failed;
+				}
+			}
+			fails( 'Element', startTag );
+			return self.failed;
+		};
 
 		/**
 		 *	RULE: Content <- Element / TextNode
 		 */
 		this.parseContent = function () {
-			return self.parseTextNode();
-		}
+			var result = self.parseElement();
+
+			if ( result === self.failed ) {
+				result = self.parseTextNode();
+			}
+			return result;
+		};
 	}
 
 
 	Parser.prototype.fromHTML = function ( html ) {
-		var markdown;
+		var result;
+
+		this.maxFailPos = 0;
+		this.maxFailExpected = {};
 
 		this.curPos = 0;
 		this.input = html;
 		this.curChar = this.input.charAt(this.curPos);
 
-		return this.parseContent();
+		result = this.parseContent();
+
+		if( result !== this.failed && this.curPos === html.length ) {
+			return result;
+		} else {
+			throw 'PARSING ERROR: Expected ' + this.maxFailExpected.expected + ' but found "' +
+				this.maxFailExpected.found + '" @' + this.maxFailPos;
+		}
 	}
 
 
-	// Factory.
+	// Factory
 	// -------------------------
 	function ParserFactory () {}
 
-	ParserFactory.prototype.createParser = function () {
-		return new Parser();
+	ParserFactory.prototype.createParser = function ( mutationsHTML ) {
+		var DEFAULT_MUTATIONS_HTML = [
+				{ exp: /^em$|^i$/, start: '*' },
+				{ exp: /^strong$|^b$/, start: '**' },
+				{ exp: /^div$|^p$/, start: '', end: '\n' }
+			],
+			mutationFactory = new MutationFactory(),
+			options = {mutations: {html: [] } },
+			tmp;
+
+		tmp = DEFAULT_MUTATIONS_HTML.concat( mutationsHTML || [] );
+		for ( var i = 0, size = tmp.length; i < size; i++ ) {
+			options.mutations.html.push( mutationFactory.createMutation(tmp[i]) );
+		};
+
+		return new Parser( options );
 	};
 
 	return ParserFactory;

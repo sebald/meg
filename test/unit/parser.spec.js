@@ -20,6 +20,11 @@ describe('[parser.js]', function () {
 		it('should have a function to create a new parser', function () {
 			expect(typeof factory.createParser).toEqual( 'function' );
 		});
+
+		it('should create a parser', function () {
+			var parser = factory.createParser();
+			expect(parser.constructor.name).toBe( 'Parser' );
+		});
 	});
 
 
@@ -30,10 +35,6 @@ describe('[parser.js]', function () {
 
 		beforeEach( function () {
 			parser = factory.createParser();
-		});
-
-		it('should be possible to create a parser', function () {
-			expect(parser.constructor.name).toBe( 'Parser' );
 		});
 
 		it('should have a function to parse HTML to markdown', function () {
@@ -55,9 +56,13 @@ describe('[parser.js]', function () {
 				expect(function () { parser.fromHTML('< that is a bad start') }).toThrow();
 			});
 
-			// it('should parse simple <div>s to paragraphs', function () {
-			// 	expect(parser.fromHTML( '<div>This is a paragraph!</div>' )).toEqual('This is a paragraph!');
-			// });
+			// Elements
+			it('should parse simple <div> to paragraphs', function () {
+				expect(parser.fromHTML( '<div>This text is wrapped inside a div.</div>' )).toEqual('This text is wrapped inside a div.');
+				expect(parser.fromHTML( '<div>Another random text to test the parser!</div>' )).toEqual('Another random text to test the parser!');
+			});
+
+			// TODO: Test bad tags like "< div" and allow tags like "<div class='sdsd'>"
 		});
 	});
 
