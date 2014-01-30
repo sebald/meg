@@ -25,14 +25,14 @@ module.exports = function (grunt) {
 			src: [
 				'<%= dir.src %>/mutation.js',
 				'<%= dir.src %>/parser.js',
-				'<%= dir.src %>/mep.js'
+				'<%= dir.src %>/meg.js'
 			],
 			spec: '<%= dir.spec %>/**/*.spec.js'
 		},
 		banner: [
 			'/*!',
-			' * mep.js v<%= pkg.version %>',
-			' * <%= pkg.homepage %>',
+			' * meg.js v<%= pkg.version %>',
+			' * <%= pkg.homegage %>',
 			' * Copyright 2014 Sebastian Sebald; Licensed MIT',
 			' */\n\n'
 		].join('\n'),
@@ -78,7 +78,7 @@ module.exports = function (grunt) {
 					compress: false
 				},
 				src: ['<%= files.src %>'],
-				dest: '<%= dir.dist %>/mep.js'
+				dest: '<%= dir.dist %>/meg.js'
 			},
 			min: {
 				options: {
@@ -86,7 +86,7 @@ module.exports = function (grunt) {
 					compress: true
 				},
 				src: ['<%= files.src %>'],
-				dest: '<%= dir.dist %>/mep.min.js'
+				dest: '<%= dir.dist %>/meg.min.js'
 			}
 		},
 
