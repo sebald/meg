@@ -57,17 +57,25 @@ describe('[parser.js]', function () {
 			});
 
 			// Elements
-			it('should parse simple <div> tag to a paragraph', function () {
-				expect(parser.fromHTML( '<div>This text is wrapped inside a div.</div>' )).toEqual('This text is wrapped inside a div.');
-				expect(parser.fromHTML( '<div>Another random text to test the parser!</div>' )).toEqual('Another random text to test the parser!');
+			it('should parse simple <div> tags to a paragraph', function () {
+				expect(parser.fromHTML('<div>This text is wrapped inside a div.</div>')).toEqual('This text is wrapped inside a div.');
+				expect(parser.fromHTML('<div>Another random text to test the parser!</div>')).toEqual('Another random text to test the parser!');
 			});
 
-			it('should parse simple <p> tag to a paragraph', function () {
-				expect(parser.fromHTML( '<p>This text is wrapped inside a p.</p>' )).toEqual('This text is wrapped inside a p.');
-				expect(parser.fromHTML( '<p>Using the same text because I am lazy...</p>' )).toEqual('Using the same text because I am lazy...');
+			it('should parse simple <p> tags to a paragraph', function () {
+				expect(parser.fromHTML('<p>This text is wrapped inside a p.</p>')).toEqual('This text is wrapped inside a p.');
+				expect(parser.fromHTML('<p>Using the same text because I am lazy...</p>')).toEqual('Using the same text because I am lazy...');
 			});
 
-			// TODO: Test bad tags like "< div" and allow tags like "<div class='sdsd'>"
+			it('should parse simple <strong> tags to **', function () {
+				expect(parser.fromHTML('<strong>Bold statement</strong>')).toEqual('**Bold statement**');
+				expect(parser.fromHTML('<strong>Important</strong>')).toEqual('**Important**');
+			});
+
+			it('should parse simple <b> tags to **', function () {
+				expect(parser.fromHTML('<em>I think we all have emphasis. We may not have enough courage to display it.</em>')).toEqual('*I think we all have emphasis. We may not have enough courage to display it.*');
+				expect(parser.fromHTML('<em>You mean emphaty?</em>')).toEqual('*You mean emphaty?*');
+			});
 
 			// General Parsing Errors
 			it('should throw an error when the startTag doesn\'t match the element specification', function () {
