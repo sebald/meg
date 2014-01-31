@@ -127,7 +127,6 @@ var ParserFactory = (function () {
 				fails( self.parseChar, current );
 				current = self.failed;
 			}
-
 			return result;
 		};
 
@@ -244,19 +243,11 @@ var ParserFactory = (function () {
 			if ( current === self.failed ) {
 				current = self.parseTextNode();
 			}
-			var i = 0;
 			while( current !== self.failed ) {
 				result += current;
 				current = self.parseElement();
-				if( i === 0)
 				if( current === self.failed ) {
 					current = self.parseTextNode();
-					if( i === 0) {
-					}
-				}
-				i++;
-				if( i === 25 ) {
-					throw 'Uuuuuuuuuuuuuuuuuuuuuuuuuups';
 				}
 			}
 
