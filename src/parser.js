@@ -110,7 +110,8 @@ var ParserFactory = (function () {
 			if ( self.parseChar.test(self.curChar) ) {
 				current = writeToResult();
 			} else {
-				current = self.failed;
+				fails( self.parseChar, self.curChar );
+				return self.failed;
 			}
 			if ( current !== self.failed ) {
 				while ( current !== self.failed ) {
@@ -126,6 +127,7 @@ var ParserFactory = (function () {
 				fails( self.parseChar, current );
 				current = self.failed;
 			}
+
 			return result;
 		};
 
@@ -207,7 +209,6 @@ var ParserFactory = (function () {
 				content,
 				closingTag,
 				mutant;
-
 			if ( startTag !== self.failed ) {
 				content = self.parseContent();
 				if ( content !== self.failed ) {
@@ -236,11 +237,29 @@ var ParserFactory = (function () {
 		 *	RULE: Content <- Element / TextNode
 		 */
 		this.parseContent = function () {
-			var result = self.parseElement();
+			var result = '',
+				current = self.parseElement();
 
-			if ( result === self.failed ) {
-				result = self.parseTextNode();
+
+			if ( current === self.failed ) {
+				current = self.parseTextNode();
 			}
+			var i = 0;
+			while( current !== self.failed ) {
+				result += current;
+				current = self.parseElement();
+				if( i === 0)
+				if( current === self.failed ) {
+					current = self.parseTextNode();
+					if( i === 0) {
+					}
+				}
+				i++;
+				if( i === 25 ) {
+					throw 'Uuuuuuuuuuuuuuuuuuuuuuuuuups';
+				}
+			}
+
 			return result;
 		};
 	}
@@ -259,7 +278,7 @@ var ParserFactory = (function () {
 		result = this.parseContent();
 
 		if( result !== this.failed && this.curPos === html.length ) {
-			return result;
+			return result.replace(/\s+$/, '');
 		} else {
 			throw 'PARSING ERROR: Expected ' + this.maxFailExpected.expected + ' but found "' +
 				this.maxFailExpected.found + '" @ ' + this.maxFailPos + '.';
@@ -275,7 +294,7 @@ var ParserFactory = (function () {
 		var DEFAULT_MUTATIONS_HTML = [
 				{ exp: /^em$|^i$/, start: '*' },
 				{ exp: /^strong$|^b$/, start: '**' },
-				{ exp: /^div$|^p$/, start: '', end: '\n' }
+				{ exp: /^div$|^p$/, start: '', close: '\n' }
 			],
 			mutationFactory = new MutationFactory(),
 			options = {mutations: {html: [] } },

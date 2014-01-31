@@ -77,6 +77,11 @@ describe('[parser.js]', function () {
 				expect(parser.fromHTML('<em>You mean emphaty?</em>')).toEqual('*You mean emphaty?*');
 			});
 
+			// Complex Elements
+			it('should parse complex HTML to Markdown', function () {
+				expect(parser.fromHTML('<div>line 1</div><div>line 2</div>')).toEqual('line 1\nline 2');
+			});
+
 			// General Parsing Errors
 			it('should throw an error when the startTag doesn\'t match the element specification', function () {
 				expect(function () { parser.fromHTML('< div>Meh, typo</div>'); }).toThrow();
