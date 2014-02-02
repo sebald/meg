@@ -80,6 +80,11 @@ describe('[parser.js]', function () {
 			// Complex Elements
 			it('should parse complex HTML to Markdown', function () {
 				expect(parser.fromHTML('<div>line 1</div><div>line 2</div>')).toEqual('line 1\nline 2');
+				expect(parser.fromHTML('<div>line 1</div><div>line 2</div><div>line 3</div>')).toEqual('line 1\nline 2\nline 3');
+
+				expect(parser.fromHTML('<div>count <strong>1</strong> count <em>2</em></div>')).toEqual('count **1** count *2*');
+				expect(parser.fromHTML('<div>This is the <em>first</em> paragraph.</div><div>followd by a second one.</div>'))
+					.toEqual('This is the *first* paragraph.\nfollowd by a second one.');
 			});
 
 			// General Parsing Errors
