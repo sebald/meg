@@ -1,4 +1,4 @@
-ddescribe( '[reporter.js]', function () {
+describe( '[reporter.js]', function () {
 	var reporter;
 
 	beforeEach( function () {
