@@ -5,10 +5,9 @@ var ParserFactory = (function () {
 	function Parser ( options ) {
 		var self = this;
 
-		this.maxFailPos = 0;
-		this.maxFailExpected = {};
 		this.failed = null;
 		this.mutations = options.mutations;
+		this.reporter = new Reporter( 'PARSING ERROR' );
 
 
 		// Helpers
@@ -25,23 +24,12 @@ var ParserFactory = (function () {
 			self.curChar = self.input.charAt( pos );
 		}
 
-		function fails ( expected, found ) {
-			if ( self.curPos < self.maxFailPos ) {
-				return;
-			}
-
-			if ( self.curPos > self.maxFailPos ) {
-				self.maxFailPos = self.curPos;
-				self.maxFailExpected = { expected: expected, found: found };
-			}
-		}
-
 
 		// Mutate HTML <> Markdown
 		// -------------------------
 		function applyMutation ( startTag, content, closingTag ) {
 			if ( startTag !== closingTag ) {
-				fails( 'startTag to match closingTag', '<' + startTag + '>...</' + closingTag + '>');
+				self.reporter.snitch( 'startTag to match closingTag', '<' + startTag + '>...</' + closingTag + '>', self.curPos );
 				return self.failed;
 			}
 
@@ -53,7 +41,7 @@ var ParserFactory = (function () {
 				}
 			}
 
-			fails( 'a known expression to mutate', startTag );
+			self.reporter.snitch( 'a known expression to mutate', startTag, self.curPos );
 			return self.failed;
 		}
 
@@ -80,7 +68,7 @@ var ParserFactory = (function () {
 			if ( self.parseLowerCase.test(self.curChar) ) {
 				current = writeToResult();
 			} else {
-				fails( self.parseLowerCase, self.curChar );
+				this.reporter.snitch( self.parseLowerCase, self.curChar, this.curPos );
 				return self.failed;
 			}
 			if ( current !== self.failed ) {
@@ -89,12 +77,12 @@ var ParserFactory = (function () {
 					if( self.parseLowerCase.test(self.curChar) ) {
 						current = writeToResult();
 					} else {
-						fails( self.parseLowerCase, current );
+						this.reporter.snitch( self.parseLowerCase, current, this.curPos );
 						current = self.failed;
 					}
 				}
 			} else {
-				fails( self.parseLowerCase, current);
+				this.reporter.snitch( self.parseLowerCase, curren, this.curPost);
 				current = self.failed;
 			}
 			return result;
@@ -110,7 +98,7 @@ var ParserFactory = (function () {
 			if ( self.parseChar.test(self.curChar) ) {
 				current = writeToResult();
 			} else {
-				fails( self.parseChar, self.curChar );
+				this.reporter.snitch( self.parseChar, self.curChar, this.curPos );
 				return self.failed;
 			}
 			if ( current !== self.failed ) {
@@ -119,12 +107,12 @@ var ParserFactory = (function () {
 					if ( self.parseChar.test(self.curChar) ) {
 						current = writeToResult();
 					} else {
-						fails( self.parseChar, current );
+						this.reporter.snitch( self.parseChar, current, this.curPos );
 						current = self.failed;
 					}
 				}
 			} else {
-				fails( self.parseChar, current );
+				this.reporter.snitch( self.parseChar, current, this.curPos );
 				current = self.failed;
 			}
 			return result;
@@ -141,7 +129,7 @@ var ParserFactory = (function () {
 			if ( self.curChar.charCodeAt(0) === 60 ) {
 				current = writeToResult();
 			} else {
-				fails( 'StartTag', current );
+				this.reporter.snitch( 'StartTag', current, this.curPos );
 				return self.failed;
 			}
 			tagName = self.parseTagName();
@@ -149,11 +137,11 @@ var ParserFactory = (function () {
 				if( self.curChar.charCodeAt(0) === 62 ) {
 					current = writeToResult();
 				} else {
-					fails( 'StartTag', current );
+					this.reporter.snitch( 'StartTag', current, this.curPos );
 					current = self.failed;
 				}
 			} else {
-				fails( 'StartTag', current );
+				this.reporter.snitch( 'StartTag', current, this.curPos );
 				current = self.failed;
 			}
 
@@ -188,11 +176,11 @@ var ParserFactory = (function () {
 				if( self.curChar.charCodeAt(0) === 62 ) {
 					current = writeToResult();
 				} else {
-					fails( 'ClosingTag', current );
+					this.reporter.snitch( 'ClosingTag', current, this.curPos );
 					return self.failed;
 				}
 			} else {
-				fails( 'ClosingTag', current );
+				this.reporter.snitch( 'ClosingTag', current, this.curPos );
 				return self.failed;
 			}
 
@@ -220,15 +208,15 @@ var ParserFactory = (function () {
 						}
 						return mutant;
 					} else {
-						fails( 'Element', closingTag );
+						this.reporter.snitch( 'Element', closingTag, this.curPos );
 						return self.failed;
 					}
 				} else {
-					fails( 'Element', content );
+					this.reporter.snitch( 'Element', content, this.curPos );
 					return self.failed;
 				}
 			}
-			fails( 'Element', startTag );
+			this.reporter.snitch( 'Element', startTag, this.curPos );
 			return self.failed;
 		};
 
@@ -271,8 +259,7 @@ var ParserFactory = (function () {
 		if( result !== this.failed && this.curPos === html.length ) {
 			return result.replace(/\s+$/, '');
 		} else {
-			throw 'PARSING ERROR: Expected ' + this.maxFailExpected.expected + ' but found "' +
-				this.maxFailExpected.found + '" @ ' + this.maxFailPos + '.';
+			throw this.reporter.getMessage();
 		}
 	}
 
