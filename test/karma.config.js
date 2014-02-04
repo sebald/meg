@@ -2,7 +2,10 @@ module.exports = function(config) {
 	config.set({
 
 		files: [
-			'src/**/*.js',
+			'src/reporter.js',
+			'src/mutation.js',
+			'src/parser.js',
+			'src/meg.js',
 			'test/unit/**/*.spec.js'
 		],
 
