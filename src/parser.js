@@ -3,244 +3,242 @@ var ParserFactory = (function () {
 	// Parser Constructor
 	// -------------------------
 	function Parser ( options ) {
-		var self = this;
-
-		this.failed = null;
 		this.mutations = options.mutations;
 		this.reporter = new Reporter( 'PARSING ERROR' );
+	}
 
 
-		// Helpers
-		// -------------------------
-		function writeToResult () {
-			var c = self.curChar;
-			self.curPos++;
-			self.curChar = self.input.charAt( self.curPos );
-			return c;
+	// Helpers
+	// -------------------------
+	Parser.prototype.failed = null;
+
+	Parser.prototype.writeToResult = function () {
+		var c = this.curChar;
+		this.curPos++;
+		this.curChar = this.input.charAt( this.curPos );
+		return c;
+	}
+
+	Parser.prototype.resetPosTo = function ( pos ) {
+		this.curPos = pos;
+		this.curChar = this.input.charAt( pos );
+	}
+
+
+	// Mutate HTML <> Markdown
+	// -------------------------
+	Parser.prototype.applyMutation = function ( startTag, content, closingTag ) {
+		if ( startTag !== closingTag ) {
+			this.reporter.snitch( 'startTag to match closingTag', '<' + startTag + '>...</' + closingTag + '>', this.curPos );
+			return this.failed;
 		}
 
-		function resetPosTo ( pos ) {
-			self.curPos = pos;
-			self.curChar = self.input.charAt( pos );
+		var mutations = this.mutations.html;
+		for ( var i = 0, size = mutations.length; i < size; i++ ) {
+			var mutant = mutations[i].mutate( startTag, content );
+			if ( mutant !== null ) {
+				return mutant;
+			}
 		}
 
+		this.reporter.snitch( 'a known expression to mutate', startTag, this.curPos );
+		return this.failed;
+	}
 
-		// Mutate HTML <> Markdown
-		// -------------------------
-		function applyMutation ( startTag, content, closingTag ) {
-			if ( startTag !== closingTag ) {
-				self.reporter.snitch( 'startTag to match closingTag', '<' + startTag + '>...</' + closingTag + '>', self.curPos );
-				return self.failed;
-			}
+	// Grammar
+	// -------------------------
+	/**
+	 *	RULE: Char <- /[^<]/
+	 */
+	Parser.prototype.parseChar = /[^<]/;
 
-			var mutations = self.mutations.html;
-			for ( var i = 0, size = mutations.length; i < size; i++ ) {
-				var mutant = mutations[i].mutate( startTag, content );
-				if ( mutant !== null ) {
-					return mutant;
-				}
-			}
+	/**
+	 *	RULE: LowerCase <- /[a-z]/
+	 */
+	Parser.prototype.parseLowerCase = /[a-z]/;
 
-			self.reporter.snitch( 'a known expression to mutate', startTag, self.curPos );
-			return self.failed;
+	/**
+	 *	RULE: TagName <- /[a-z]+/
+	 */
+	Parser.prototype.parseTagName = function () {
+		var result = '',
+			current;
+
+		if ( this.parseLowerCase.test(this.curChar) ) {
+			current = this.writeToResult();
+		} else {
+			this.reporter.snitch( this.parseLowerCase, this.curChar, this.curPos );
+			return this.failed;
 		}
-
-
-		// Grammar
-		// -------------------------
-		/**
-		 *	RULE: Char <- /[^<]/
-		 */
-		this.parseChar = /[^<]/;
-
-		/**
-		 *	RULE: LowerCase <- /[a-z]/
-		 */
-		this.parseLowerCase = /[a-z]/;
-
-		/**
-		 *	RULE: TagName <- /[a-z]+/
-		 */
-		this.parseTagName = function () {
-			var result = '',
-				current;
-
-			if ( self.parseLowerCase.test(self.curChar) ) {
-				current = writeToResult();
-			} else {
-				this.reporter.snitch( self.parseLowerCase, self.curChar, this.curPos );
-				return self.failed;
-			}
-			if ( current !== self.failed ) {
-				while ( current !== self.failed ) {
-					result += current;
-					if( self.parseLowerCase.test(self.curChar) ) {
-						current = writeToResult();
-					} else {
-						this.reporter.snitch( self.parseLowerCase, current, this.curPos );
-						current = self.failed;
-					}
+		if ( current !== this.failed ) {
+			while ( current !== this.failed ) {
+				result += current;
+				if( this.parseLowerCase.test(this.curChar) ) {
+					current = this.writeToResult();
+				} else {
+					this.reporter.snitch( this.parseLowerCase, current, this.curPos );
+					current = this.failed;
 				}
-			} else {
-				this.reporter.snitch( self.parseLowerCase, curren, this.curPost);
-				current = self.failed;
 			}
-			return result;
-		};
+		} else {
+			this.reporter.snitch( this.parseLowerCase, curren, this.curPost);
+			current = this.failed;
+		}
+		return result;
+	};
 
-		/**
-		 *	RULE: TextNode <- Char*
-		 */
-		this.parseTextNode = function () {
-			var result = '',
-				current;
+	/**
+	 *	RULE: TextNode <- Char*
+	 */
+	Parser.prototype.parseTextNode = function () {
+		var result = '',
+			current;
 
-			if ( self.parseChar.test(self.curChar) ) {
-				current = writeToResult();
-			} else {
-				this.reporter.snitch( self.parseChar, self.curChar, this.curPos );
-				return self.failed;
-			}
-			if ( current !== self.failed ) {
-				while ( current !== self.failed ) {
-					result += current;
-					if ( self.parseChar.test(self.curChar) ) {
-						current = writeToResult();
-					} else {
-						this.reporter.snitch( self.parseChar, current, this.curPos );
-						current = self.failed;
-					}
+		if ( this.parseChar.test(this.curChar) ) {
+			current = this.writeToResult();
+		} else {
+			this.reporter.snitch( this.parseChar, this.curChar, this.curPos );
+			return this.failed;
+		}
+		if ( current !== this.failed ) {
+			while ( current !== this.failed ) {
+				result += current;
+				if ( this.parseChar.test(this.curChar) ) {
+					current = this.writeToResult();
+				} else {
+					this.reporter.snitch( this.parseChar, current, this.curPos );
+					current = this.failed;
 				}
-			} else {
-				this.reporter.snitch( self.parseChar, current, this.curPos );
-				current = self.failed;
 			}
-			return result;
-		};
+		} else {
+			this.reporter.snitch( this.parseChar, current, this.curPos );
+			current = this.failed;
+		}
+		return result;
+	};
 
-		/**
-		 *	RULE: StartTag <- '<' TagName '>'
-		 */
-		this.parseStartTag = function () {
-			var startPos = self.curPos,
-				current,
-				tagName;
+	/**
+	 *	RULE: StartTag <- '<' TagName '>'
+	 */
+	Parser.prototype.parseStartTag = function () {
+		var startPos = this.curPos,
+			current,
+			tagName;
 
-			if ( self.curChar.charCodeAt(0) === 60 ) {
-				current = writeToResult();
+		if ( this.curChar.charCodeAt(0) === 60 ) {
+			current = this.writeToResult();
+		} else {
+			this.reporter.snitch( 'StartTag', current, this.curPos );
+			return this.failed;
+		}
+		tagName = this.parseTagName();
+		if ( tagName !== this.failed ) {
+			if( this.curChar.charCodeAt(0) === 62 ) {
+				current = this.writeToResult();
 			} else {
 				this.reporter.snitch( 'StartTag', current, this.curPos );
-				return self.failed;
+				current = this.failed;
 			}
-			tagName = self.parseTagName();
-			if ( tagName !== self.failed ) {
-				if( self.curChar.charCodeAt(0) === 62 ) {
-					current = writeToResult();
-				} else {
-					this.reporter.snitch( 'StartTag', current, this.curPos );
-					current = self.failed;
-				}
-			} else {
-				this.reporter.snitch( 'StartTag', current, this.curPos );
-				current = self.failed;
-			}
+		} else {
+			this.reporter.snitch( 'StartTag', current, this.curPos );
+			current = this.failed;
+		}
 
-			// Reset position.
-			if( current === self.failed ) {
-				resetPosTo( startPos );
-				return self.failed;
-			}
+		// Reset position.
+		if( current === this.failed ) {
+			this.resetPosTo( startPos );
+			return this.failed;
+		}
 
-			return tagName;
-		};
+		return tagName;
+	};
 
-		/**
-		 *	RULE: ClosingTag <- '</' TagName '>'
-		 */
-		this.parseClosingTag = function () {
-			var current,
-				tagName;
+	/**
+	 *	RULE: ClosingTag <- '</' TagName '>'
+	 */
+	Parser.prototype.parseClosingTag = function () {
+		var current,
+			tagName;
 
-			if ( self.curChar.charCodeAt(0) === 60 ) {
-				current = writeToResult();
-			} else {
-				return self.failed;
-			}
-			if( self.curChar.charCodeAt(0) === 47 ) {
-				current = writeToResult();
-			} else {
-				return self.failed;
-			}
-			tagName = self.parseTagName();
-			if ( tagName !== self.failed ) {
-				if( self.curChar.charCodeAt(0) === 62 ) {
-					current = writeToResult();
-				} else {
-					this.reporter.snitch( 'ClosingTag', current, this.curPos );
-					return self.failed;
-				}
+		if ( this.curChar.charCodeAt(0) === 60 ) {
+			current = this.writeToResult();
+		} else {
+			return this.failed;
+		}
+		if( this.curChar.charCodeAt(0) === 47 ) {
+			current = this.writeToResult();
+		} else {
+			return this.failed;
+		}
+		tagName = this.parseTagName();
+		if ( tagName !== this.failed ) {
+			if( this.curChar.charCodeAt(0) === 62 ) {
+				current = this.writeToResult();
 			} else {
 				this.reporter.snitch( 'ClosingTag', current, this.curPos );
-				return self.failed;
+				return this.failed;
 			}
+		} else {
+			this.reporter.snitch( 'ClosingTag', current, this.curPos );
+			return this.failed;
+		}
 
-			return tagName;
-		};
+		return tagName;
+	};
 
-		/**
-		 *	RULE: Element <- StartTag Content ClosingTag
-		 */
-		this.parseElement = function () {
-			var startPos = self.curPos,
-				startTag = self.parseStartTag(),
-				content,
-				closingTag,
-				mutant;
-			if ( startTag !== self.failed ) {
-				content = self.parseContent();
-				if ( content !== self.failed ) {
-					closingTag = self.parseClosingTag();
-					if ( closingTag !== self.failed ) {
-						mutant = applyMutation( startTag, content, closingTag );
-						if( mutant === self.failed ) {
-							resetPosTo( startPos );
-							return self.failed;
-						}
-						return mutant;
-					} else {
-						this.reporter.snitch( 'Element', closingTag, this.curPos );
-						return self.failed;
+	/**
+	 *	RULE: Element <- StartTag Content ClosingTag
+	 */
+	Parser.prototype.parseElement = function () {
+		var startPos = this.curPos,
+			startTag = this.parseStartTag(),
+			content,
+			closingTag,
+			mutant;
+		if ( startTag !== this.failed ) {
+			content = this.parseContent();
+			if ( content !== this.failed ) {
+				closingTag = this.parseClosingTag();
+				if ( closingTag !== this.failed ) {
+					mutant = this.applyMutation( startTag, content, closingTag );
+					if( mutant === this.failed ) {
+						this.resetPosTo( startPos );
+						return this.failed;
 					}
+					return mutant;
 				} else {
-					this.reporter.snitch( 'Element', content, this.curPos );
-					return self.failed;
+					this.reporter.snitch( 'Element', closingTag, this.curPos );
+					return this.failed;
 				}
+			} else {
+				this.reporter.snitch( 'Element', content, this.curPos );
+				return this.failed;
 			}
-			this.reporter.snitch( 'Element', startTag, this.curPos );
-			return self.failed;
-		};
+		}
+		this.reporter.snitch( 'Element', startTag, this.curPos );
+		return this.failed;
+	};
 
-		/**
-		 *	RULE: Content <- Element / TextNode
-		 */
-		this.parseContent = function () {
-			var result = '',
-				current = self.parseElement();
+	/**
+	 *	RULE: Content <- Element / TextNode
+	 */
+	Parser.prototype.parseContent = function () {
+		var result = '',
+			current = this.parseElement();
 
 
-			if ( current === self.failed ) {
-				current = self.parseTextNode();
+		if ( current === this.failed ) {
+			current = this.parseTextNode();
+		}
+		while( current !== this.failed ) {
+			result += current;
+			current = this.parseElement();
+			if( current === this.failed ) {
+				current = this.parseTextNode();
 			}
-			while( current !== self.failed ) {
-				result += current;
-				current = self.parseElement();
-				if( current === self.failed ) {
-					current = self.parseTextNode();
-				}
-			}
+		}
 
-			return result;
-		};
+		return result;
 	}
 
 
