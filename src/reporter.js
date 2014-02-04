@@ -1,3 +1,5 @@
+/* exported Reporter */
+
 var Reporter = (function () {
 
 	function Reporter ( prefix ) {
@@ -15,12 +17,12 @@ var Reporter = (function () {
 			this.maxFailPos = position;
 			this.failure = { expected: expected, found: found };
 		}
-	}
+	};
 
 	Reporter.prototype.getMessage = function () {
 		return this.prefix + ': Expected ' + this.failure.expected + ' but found "' +
 				this.failure.found + '" @ ' + this.maxFailPos + '.';
-	}
+	};
 
 	return Reporter;
 

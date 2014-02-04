@@ -1,3 +1,6 @@
+/*global Reporter:true, MutationFactory:true */
+/* exported ParserFactory */
+
 var ParserFactory = (function () {
 
 	// Parser Constructor
@@ -17,12 +20,12 @@ var ParserFactory = (function () {
 		this.curPos++;
 		this.curChar = this.input.charAt( this.curPos );
 		return c;
-	}
+	};
 
 	Parser.prototype.resetPosTo = function ( pos ) {
 		this.curPos = pos;
 		this.curChar = this.input.charAt( pos );
-	}
+	};
 
 
 	// Mutate HTML <> Markdown
@@ -43,7 +46,7 @@ var ParserFactory = (function () {
 
 		this.reporter.snitch( 'a known expression to mutate', startTag, this.curPos );
 		return this.failed;
-	}
+	};
 
 	// Grammar
 	// -------------------------
@@ -81,7 +84,7 @@ var ParserFactory = (function () {
 				}
 			}
 		} else {
-			this.reporter.snitch( this.parseLowerCase, curren, this.curPost);
+			this.reporter.snitch( this.parseLowerCase, current, this.curPost);
 			current = this.failed;
 		}
 		return result;
@@ -239,7 +242,7 @@ var ParserFactory = (function () {
 		}
 
 		return result;
-	}
+	};
 
 
 	Parser.prototype.fromHTML = function ( html ) {
@@ -259,7 +262,7 @@ var ParserFactory = (function () {
 		} else {
 			throw this.reporter.getMessage();
 		}
-	}
+	};
 
 
 	// Factory
@@ -279,7 +282,7 @@ var ParserFactory = (function () {
 		tmp = DEFAULT_MUTATIONS_HTML.concat( mutationsHTML || [] );
 		for ( var i = 0, size = tmp.length; i < size; i++ ) {
 			options.mutations.html.push( mutationFactory.createMutation(tmp[i]) );
-		};
+		}
 
 		return new Parser( options );
 	};

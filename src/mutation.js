@@ -1,3 +1,5 @@
+/* exported MutationFactory */
+
 var MutationFactory = (function () {
 
 	// Mutation Constructor
