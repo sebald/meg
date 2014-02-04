@@ -1,113 +1,262 @@
 describe('[parser.js]', function () {
-	var factory;
+	var parser, mutationFactory;
 
-	// ParserFactory
+	beforeEach( function () {
+		parser = new Parser();
+		mutationFactory = new MutationFactory();
+
+		spyOn(parser.reporter, 'snitch' );
+	});
+
+	it('should be defined', function () {
+		expect(Parser).toBeDefined();
+		expect(typeof Parser).toEqual( 'function' );
+	});
+
+	it('should be possible to create a new Praser', function () {
+		expect(Parser() instanceof Parser);
+	});
+
+
+	// Helpers
 	// -------------------------
-	describe('ParserFactory:', function () {
-		beforeEach( function () {
-			factory = new ParserFactory();
+	describe('Helpers', function () {
+		it('should have a failed "const"', function () {
+			expect(parser.failed).toBeDefined();
+			expect(parser.failed).toEqual( null );
 		});
 
-		it('should be defined', function () {
-			expect(ParserFactory).toBeDefined();
-			expect(typeof ParserFactory).toEqual( 'function' );
+		it('should have a function to return the current char and iterate', function () {
+			parser.input = 'hello';
+			parser.curPos = 0;
+			parser.curChar = parser.input[parser.curPos];
+			var result = parser.writeToResult();
+
+			expect(result).toEqual( 'h' );
+			expect(parser.curPos).toEqual( 1 );
+			expect(parser.curChar).toEqual( 'e' );
 		});
 
-		it('should be possible to create a factory instance', function () {
-			expect(factory).toBeDefined();
-		});
+		it('should have a function to reset current state to a position', function () {
+			parser.input = 'hello';
+			parser.curPos = 3;
+			parser.curChar = parser.input[parser.curPos];
+			parser.resetPosTo(0);
 
-		it('should have a function to create a new parser', function () {
-			expect(typeof factory.createParser).toEqual( 'function' );
-		});
-
-		it('should create a parser', function () {
-			var parser = factory.createParser();
-			expect(parser.constructor.name).toBe( 'Parser' );
+			expect(parser.curPos).toEqual( 0 );
+			expect(parser.curChar).toEqual( 'h' );
 		});
 	});
 
 
-	// Parser
+	// Mutate
 	// -------------------------
-	describe('Parser', function () {
-		var parser;
-
-		beforeEach( function () {
-			parser = (new ParserFactory).createParser();
+	describe('Mutate', function () {
+		it('should addd error message to reporter if start and closing tags are not equal', function () {
+			expect(parser.applyMutation('a', 'text', 'b')).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
 		});
 
-		it('should have a function to parse HTML to markdown', function () {
-			expect(typeof parser.fromHTML).toEqual( 'function' );
+		it('should return FAILED if no mutation rule matched', function () {
+			expect(parser.applyMutation('a', 'text', 'a')).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+		});
+
+		it('should be able to transform a certain string via mutation rules', function () {
+			parser.mutations.html = [
+				mutationFactory.createMutation({ exp: /^a$/, start: '!!!' })
+			];
+			expect(parser.applyMutation('a', 'text', 'a')).toEqual( '!!!text!!!' );
+			expect(parser.reporter.snitch).not.toHaveBeenCalled();
+		});
+
+		it('should apply the correct transformation', function () {
+			parser.mutations.html = [
+				mutationFactory.createMutation({ exp: /^a$/, start: '!!!' }),
+				mutationFactory.createMutation({ exp: /^b$/, start: '###' })
+			];
+			expect(parser.applyMutation('a', 'text', 'a')).toEqual( '!!!text!!!' );
+			expect(parser.applyMutation('b', 'text', 'b')).toEqual( '###text###' );
+			expect(parser.reporter.snitch).not.toHaveBeenCalled();
+		});
+	});
+
+
+	// Grammar
+	// -------------------------
+	describe('Grammar', function () {
+		var initParser = function ( input ) {
+			parser.input = input;
+			parser.resetPosTo(0);
+		};
+
+		beforeEach(function () {
+			parser.mutations.html = [
+				mutationFactory.createMutation({ exp: /^em$/, start: '*' }),
+				mutationFactory.createMutation({ exp: /^strong$/, start: '**' })
+			];
+		});
+
+		it('should have a rule for "Char"', function () {
+			expect(parser.parseChar instanceof RegExp).toBeTruthy();
+		});
+
+		it('should have a rule for "LowerCase"', function () {
+			expect(parser.parseLowerCase instanceof RegExp).toBeTruthy();
 		});
 
 
-		// Parse HTML to Markdown
+		// TagName
 		// -------------------------
-		describe('Parse HTML to Markdown', function () {
-			// Text Nodes
-			it('should be able to parse a textNode', function () {
-				expect(parser.fromHTML( 'This is a paragraph!' )).toEqual('This is a paragraph!');
-				expect(parser.fromHTML( 'This is another text!' )).toEqual('This is another text!');
-			});
+		it('should be possible to parse a "TagName"', function () {
+			initParser('div');
+			expect(parser.parseTagName()).toEqual('div');
 
-			it('should throw an error when textNode doesn\'t match the spec.', function () {
-				expect(function () { parser.fromHTML('You should escape angle brackets like <'); }).toThrow();
-				expect(function () { parser.fromHTML('< that is a bad start'); }).toThrow();
-			});
+			initParser('b');
+			expect(parser.parseTagName()).toEqual('b');
+		});
 
-			// Elements
-			it('should parse simple <div> tags to a paragraph', function () {
-				expect(parser.fromHTML('<div>This text is wrapped inside a div.</div>')).toEqual('This text is wrapped inside a div.');
-				expect(parser.fromHTML('<div>Another random text to test the parser!</div>')).toEqual('Another random text to test the parser!');
-			});
+		it('should return a result until "TagName" doesn\'t match the rule anymore', function () {
+			initParser('a#');
+			expect(parser.parseTagName()).toEqual('a');
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+			// Note: We do this to be more robust when reading a TagName.
+		});
 
-			it('should parse simple <p> tags to a paragraph', function () {
-				expect(parser.fromHTML('<p>This text is wrapped inside a p.</p>')).toEqual('This text is wrapped inside a p.');
-				expect(parser.fromHTML('<p>Using the same text because I am lazy...</p>')).toEqual('Using the same text because I am lazy...');
-			});
+		it('should return FAILED and snitch if "TagName" parsing fails', function () {
+			initParser('#');
+			expect(parser.parseTagName()).toEqual(parser.failed);
+			expect(parser.reporter.snitch).toHaveBeenCalled();
 
-			it('should parse simple <strong> tags to **', function () {
-				expect(parser.fromHTML('<strong>Bold statement</strong>')).toEqual('**Bold statement**');
-				expect(parser.fromHTML('<strong>Important</strong>')).toEqual('**Important**');
-			});
+		});
 
-			it('should parse simple <b> tags to **', function () {
-				expect(parser.fromHTML('<em>I think we all have emphasis. We may not have enough courage to display it.</em>')).toEqual('*I think we all have emphasis. We may not have enough courage to display it.*');
-				expect(parser.fromHTML('<em>You mean emphaty?</em>')).toEqual('*You mean emphaty?*');
-			});
 
-			// Complex Elements
-			it('should parse complex HTML to Markdown', function () {
-				expect(parser.fromHTML('<div>line 1</div><div>line 2</div>')).toEqual('line 1\nline 2');
-				expect(parser.fromHTML('<div>line 1</div><div>line 2</div><div>line 3</div>')).toEqual('line 1\nline 2\nline 3');
+		// TextNode
+		// -------------------------
+		it('should be possible to parse a "TextNode"', function () {
+			initParser('some Text');
+			expect(parser.parseTextNode()).toEqual( 'some Text' );
+		});
 
-				expect(parser.fromHTML('<div>count <strong>1</strong> count <em>2</em></div>')).toEqual('count **1** count *2*');
-				expect(parser.fromHTML('<div>This is the <em>first</em> paragraph.</div><div>followd by a second one.</div>'))
-					.toEqual('This is the *first* paragraph.\nfollowd by a second one.');
-			});
+		it('should read "TextNode" as long as rule matches', function () {
+			initParser('another Text<');
+			expect(parser.parseTextNode()).toEqual( 'another Text' );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+			// Note: It will also snitch because it could be an error. But in most cases
+			// this is only the end of the TextNode.
+		});
 
-			// General Parsing Errors
-			it('should throw an error when the startTag doesn\'t match the element specification', function () {
-				expect(function () { parser.fromHTML('< div>Meh, typo</div>'); }).toThrow();
-				expect(function () { parser.fromHTML('< strong>Meh, typo</strong>'); }).toThrow();
-			});
+		it('should return FAILED and snitch if "TextNode" parsing fails', function () {
+			initParser('<');
+			expect(parser.parseTagName()).toEqual(parser.failed);
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+		});
 
-			it('should throw an error when the startTag doesn\'t match the closing tag', function () {
-				expect(function () { parser.fromHTML('<div>foobar</p>'); }).toThrow();
-				expect(function () { parser.fromHTML('<b>foobar</strong>'); }).toThrow();
-			});
 
-			it('should throw an error when no mutation matches the tag to transform', function () {
-				expect(function () { parser.fromHTML('<foo>This won\'t work</foo>'); }).toThrow();
-			});
+		// StarTag
+		// -------------------------
+		it('should be possible to parse a "StartTag"', function () {
+			initParser('<div>');
+			expect(parser.parseStartTag()).toEqual('div');
+		});
 
-			it('should provide helpful error messages.', function () {
-				expect(function () { parser.fromHTML('< woops'); }).toThrow('PARSING ERROR: Expected /[a-z]/ but found " " @ 1.');
-				expect(function () { parser.fromHTML('<b>foobar</strong>'); }).toThrow('PARSING ERROR: Expected startTag to match closingTag but found "<b>...</strong>" @ 18.');
-				expect(function () { parser.fromHTML('<foo>This won\'t work</foo>'); }).toThrow('PARSING ERROR: Expected a known expression to mutate but found "foo" @ 26.');
-			});
+		it('should return to the exact state if parsing "StartTag" fails', function () {
+			var state;
+
+			initParser('This is not a "StartTag" but a "TextNode"');
+			state = { pos: parser.curPos, c: parser.curChar };
+
+			expect(parser.parseStartTag()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+
+			expect(parser.curPos).toEqual( state.pos );
+			expect(parser.curChar).toEqual( state.c );
+
+			initParser('<This is not just wrong.');
+			state = { pos: parser.curPos, c: parser.curChar };
+
+			expect(parser.parseStartTag()).toEqual( parser.failed );
+			expect(parser.curPos).toEqual( state.pos );
+			expect(parser.curChar).toEqual( state.c );
+		});
+
+		it('should return FAILED anf snitch if "StartTag" fails', function () {
+			initParser('noooooo');
+			expect(parser.parseStartTag()).toEqual(parser.failed);
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+		});
+
+
+		// ClosingTag
+		// -------------------------
+		it('should be possible to parse a "ClosingTag"', function () {
+			initParser('</p>');
+			expect(parser.parseClosingTag()).toEqual('p');
+		});
+
+		it('should return FAILED and snitch if "ClosingTag" parsing fails', function () {
+			initParser('p>');
+			expect(parser.parseClosingTag()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+
+			initParser('<p>');
+			expect(parser.parseClosingTag()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+
+			initParser('</p');
+			expect(parser.parseClosingTag()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+
+			initParser('</#>');
+			expect(parser.parseClosingTag()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+		});
+
+
+		// Element
+		// -------------------------
+		it('should be possible to parse an "Element"', function () {
+			initParser('<em>This is an element!</em>');
+			expect(parser.parseElement()).toEqual('*This is an element!*');
+		});
+
+		it('should return FAILED and snitch if "Element" parsing fails', function () {
+			initParser('em>This is an element!</em>');
+			expect(parser.parseElement()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+
+			initParser('<em>Th<is is an element!</em>');
+			expect(parser.parseElement()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+
+			initParser('<em>This is an element!<em>');
+			expect(parser.parseElement()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+
+			initParser('<foo>This is an element!</foo>');
+			expect(parser.parseElement()).toEqual( parser.failed );
+			expect(parser.reporter.snitch).toHaveBeenCalled();
+		});
+
+
+		// Content
+		// -------------------------
+		it('should be possible to parse a "Content"', function () {
+			initParser('<em>This is an element!</em>');
+			expect(parser.parseContent()).toEqual('*This is an element!*');
+
+			initParser('This is some text.');
+			expect(parser.parseContent()).toEqual('This is some text.');
+		});
+
+		it('should fail and snitch if "Content" parsing fails', function () {
+			var html = '<em asdsa</sad>',
+				result = initParser( html );
+			expect(result !== parser.failed && parser.curPos === html.length).toBeFalsy();
+
+			html = '<em>< noes</em>';
+			result = initParser( html );
+			expect(result !== parser.failed && parser.curPos === html.length).toBeFalsy();
 		});
 	});
-
 });

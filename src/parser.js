@@ -1,13 +1,13 @@
 /*global Reporter:true, MutationFactory:true */
-/* exported ParserFactory */
+/* exported Parser */
 
-var ParserFactory = (function () {
+var Parser = (function () {
 
 	// Parser Constructor
 	// -------------------------
-	function Parser ( options ) {
-		this.mutations = options.mutations;
+	function Parser () {
 		this.reporter = new Reporter( 'PARSING ERROR' );
+		this.mutations = {};
 	}
 
 
@@ -28,7 +28,7 @@ var ParserFactory = (function () {
 	};
 
 
-	// Mutate HTML <> Markdown
+	// Mutate HTML <-> Markdown
 	// -------------------------
 	Parser.prototype.applyMutation = function ( startTag, content, closingTag ) {
 		if ( startTag !== closingTag ) {
@@ -37,10 +37,12 @@ var ParserFactory = (function () {
 		}
 
 		var mutations = this.mutations.html;
-		for ( var i = 0, size = mutations.length; i < size; i++ ) {
-			var mutant = mutations[i].mutate( startTag, content );
-			if ( mutant !== null ) {
-				return mutant;
+		if( toString.call(mutations) === '[object Array]' ) {
+			for ( var i = 0, size = mutations.length; i < size; i++ ) {
+				var mutant = mutations[i].mutate( startTag, content );
+				if ( mutant !== null ) {
+					return mutant;
+				}
 			}
 		}
 
@@ -61,7 +63,7 @@ var ParserFactory = (function () {
 	Parser.prototype.parseLowerCase = /[a-z]/;
 
 	/**
-	 *	RULE: TagName <- /[a-z]+/
+	 *	RULE: TagName <- LowerCase+
 	 */
 	Parser.prototype.parseTagName = function () {
 		var result = '',
@@ -73,19 +75,14 @@ var ParserFactory = (function () {
 			this.reporter.snitch( this.parseLowerCase, this.curChar, this.curPos );
 			return this.failed;
 		}
-		if ( current !== this.failed ) {
-			while ( current !== this.failed ) {
-				result += current;
-				if( this.parseLowerCase.test(this.curChar) ) {
-					current = this.writeToResult();
-				} else {
-					this.reporter.snitch( this.parseLowerCase, current, this.curPos );
-					current = this.failed;
-				}
+		while ( current !== this.failed ) {
+			result += current;
+			if( this.parseLowerCase.test(this.curChar) ) {
+				current = this.writeToResult();
+			} else {
+				this.reporter.snitch( this.parseLowerCase, current, this.curPos );
+				current = this.failed;
 			}
-		} else {
-			this.reporter.snitch( this.parseLowerCase, current, this.curPost);
-			current = this.failed;
 		}
 		return result;
 	};
@@ -166,11 +163,13 @@ var ParserFactory = (function () {
 		if ( this.curChar.charCodeAt(0) === 60 ) {
 			current = this.writeToResult();
 		} else {
+			this.reporter.snitch( 'ClosingTag', this.curChar, this.curPos );
 			return this.failed;
 		}
 		if( this.curChar.charCodeAt(0) === 47 ) {
 			current = this.writeToResult();
 		} else {
+			this.reporter.snitch( 'ClosingTag', this.curChar, this.curPos );
 			return this.failed;
 		}
 		tagName = this.parseTagName();
@@ -244,48 +243,5 @@ var ParserFactory = (function () {
 		return result;
 	};
 
-
-	Parser.prototype.fromHTML = function ( html ) {
-		var result;
-
-		this.maxFailPos = 0;
-		this.maxFailExpected = {};
-
-		this.curPos = 0;
-		this.input = html;
-		this.curChar = this.input.charAt(this.curPos);
-
-		result = this.parseContent();
-
-		if( result !== this.failed && this.curPos === html.length ) {
-			return result.replace(/\s+$/, '');
-		} else {
-			throw this.reporter.getMessage();
-		}
-	};
-
-
-	// Factory
-	// -------------------------
-	function ParserFactory () {}
-
-	ParserFactory.prototype.createParser = function ( mutationsHTML ) {
-		var DEFAULT_MUTATIONS_HTML = [
-				{ exp: /^em$|^i$/, start: '*' },
-				{ exp: /^strong$|^b$/, start: '**' },
-				{ exp: /^div$|^p$/, start: '', close: '\n' }
-			],
-			mutationFactory = new MutationFactory(),
-			options = {mutations: {html: [] } },
-			tmp;
-
-		tmp = DEFAULT_MUTATIONS_HTML.concat( mutationsHTML || [] );
-		for ( var i = 0, size = tmp.length; i < size; i++ ) {
-			options.mutations.html.push( mutationFactory.createMutation(tmp[i]) );
-		}
-
-		return new Parser( options );
-	};
-
-	return ParserFactory;
+	return Parser;
 })();
