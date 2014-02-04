@@ -4,6 +4,17 @@
 
 **Note:** While the transformatiom from Markdown to HTML is lossless, parsing HTML to Markdown is not. *meg.js* is designed to be used to help save `contenteditable` elements with a (hopefully) more universal format.
 
+## Gettings Started
+
+You have to install [node.js](http://nodejs.org/) if you haven't already.
+
+After you have setup node run `npm install`. When all packages have been installed you can run:
+
+- `grunt` or `grunt release` to build the project (minified)
+- `grunt test` to run the test suite (via [Karma](http://karma-runner.github.io/)).
+- `grunt dev` will build the project unminified.
+- `grunt tdd` if you want to write new tests and work on the project.
+
 ## Grammar
 
 For reference here is the grammar used to transform HTML to Markdown:
