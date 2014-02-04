@@ -71,6 +71,19 @@ describe( '[reporter.js]', function () {
 	});
 
 
+	// Reset
+	// -------------------------
+	describe('Reset', function () {
+		it('should be possible to reset the reporter', function () {
+			reporter.snitch( 'apples', 'oranges', 2 );
+			reporter.reset();
+
+			expect(reporter.failure).toEqual( {} );
+			expect(reporter.maxFailPos).toEqual( 0 );
+		});
+	});
+
+
 	// Get Failure
 	// -------------------------
 	describe('Get Failure', function () {

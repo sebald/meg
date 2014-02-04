@@ -19,6 +19,12 @@ var Reporter = (function () {
 		}
 	};
 
+	Reporter.prototype.reset = function () {
+		this.maxFailPos = 0;
+		this.failure = {};
+	};
+
+
 	Reporter.prototype.getMessage = function () {
 		return this.prefix + ': Expected ' + this.failure.expected + ' but found "' +
 				this.failure.found + '" @ ' + this.maxFailPos + '.';
