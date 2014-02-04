@@ -9,14 +9,14 @@
 For reference here is the grammar used to transform HTML to Markdown:
 
 ```
-    Char <- /[^<]/
-    LowerCase <- /[a-z]/
-    TagName <- LowerCase+
-    TextNode <- Char*
-    StartTag <- '<' TagName '>'
-    ClosingTag <- '</' TagName '>'
-    Element <- StartTag Content ClosingTag
-    Content <- Element / TextNode
+Char <- /[^<]/
+LowerCase <- /[a-z]/
+TagName <- LowerCase+
+TextNode <- Char*
+StartTag <- '<' TagName '>'
+ClosingTag <- '</' TagName '>'
+Element <- StartTag Content ClosingTag
+Content <- Element / TextNode
 ```
 
 while `Content` is the only starting expression. `Char` and `LowerCase` are terminal symbols.
@@ -25,7 +25,6 @@ while `Content` is the only starting expression. `Char` and `LowerCase` are term
 ## Example Usage
 
 ```javascript
-
 var parser = meg(),
     result = parser.fromHTML('<div>This is an <em>example</em>!</div>');
 
@@ -35,13 +34,10 @@ var parser = meg(),
 You can also pass additional mutation rules to *meg.js*:
 
 ```javascript
-
 var parser = meg({ exp: /^sup$/, start: '^', end: '' }),
     result = parser.fromHTML('I am n<sup>2</sup>.');
 
     // result is "i am n²."
-
-
 ```
 
-**Warning:** This feature is experimental, because it is not tested! For more informations see the [tests](/test/).
+**Warning:** This feature is experimental, because it is not tested! For more informations see the [tests](/test/unit/).
